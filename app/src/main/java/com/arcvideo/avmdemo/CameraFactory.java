@@ -216,6 +216,7 @@ public class CameraFactory {
     }
 
     public void startPreview(){
+        CameraFrameUtil.CreateFrameRecod();
         for (int i=0; i<cameracount; i++) {
             View view = mSurfaceViewList.get(i);
             ArcvideoCamera arcvideoCamera = new ArcvideoCamera(i, view);
@@ -237,7 +238,6 @@ public class CameraFactory {
             Log.d(TAG, "startRecoder: camera is already start.");
             return;
         }
-        CameraFrameUtil.CreateFrameRecod();
         Log.d(TAG, "startRecoder: start to recoder video. framerecod file is "+CameraFrameUtil.FrameRecod.toString());
         for (ArcvideoCamera arcvideoCamera: arcvideoCameras) {
             arcvideoCamera.startRecoder();

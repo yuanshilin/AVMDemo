@@ -14,14 +14,18 @@ import java.nio.ByteBuffer;
 
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 public class VideoEncoder {
-
 	private final static String MINE_TYPE = "video/avc";
+
+	public static int BitRate = 10000000;
+	public static int FPS = 30;
+
 	private MediaCodec mediaCodec = null;
 	private int mWidth;
 	private int mHeight;
 	private MediaMuxer mMuxer = null;
 	private int frameIndex = 0;
 	private int mTrackIndex;
+	private long startTime;
 	public VideoEncoder() {
 //		initialize();
 	}
@@ -87,7 +91,10 @@ public class VideoEncoder {
 			inputBuffer.put(tempByte);
 			frameIndex++;
 			// 微秒时间戳
-			long presentationTime = frameIndex * 40 * 1000;
+//			long presentationTime = frameIndex * 40 * 1000;
+
+//			获取当前系统的时间 System.nanoTime()（这个是纳秒时间），然后减去开始时间后再除以 1000就可以得到编码时间戳
+			long presentationTime = (System.nanoTime() - startTime) / 1000;
 			//将数据放到编码队列
 			mediaCodec.queueInputBuffer(inputBufferId, 0, tempByte.length, presentationTime, 0);
 		}
@@ -145,5 +152,10 @@ public class VideoEncoder {
 			mMuxer.release();
 			mMuxer = null;
 		}
+	}
+
+//	标记开始时间
+	public void setStartTime(long startTime) {
+		this.startTime = startTime;
 	}
 }

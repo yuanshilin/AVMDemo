@@ -42,7 +42,7 @@ public class ArcvideoCamera implements Camera.PreviewCallback, SurfaceHolder.Cal
         this.height = size.getHeight();
     }
 
-    private void initConfig(){
+    private void initCameraConfig(){
         camera = Camera.open(cameraid);
         if (camera != null) {
             Log.d(TAG, "initCamera: camera:"+ cameraid +" initial is success.");
@@ -75,11 +75,9 @@ public class ArcvideoCamera implements Camera.PreviewCallback, SurfaceHolder.Cal
         camera.release();
     }
 
-    public void startRecoder(){
-        isRecoder =! isRecoder;
-        avcEncoder.setVideoOptions(width, height, 10000000,30,
+    private void initEncoderConfig() {
+        avcEncoder.setVideoOptions(width, height, VideoEncoder.BitRate, VideoEncoder.FPS,
                 Environment.getExternalStorageDirectory() + File.separator+ getDeviceid()+".mp4");
-        avcEncoder.startEncode();
         try {
             fileOutputStream = new FileOutputStream(CameraFrameUtil.FrameRecod, true);
         } catch (FileNotFoundException e) {
@@ -87,8 +85,15 @@ public class ArcvideoCamera implements Camera.PreviewCallback, SurfaceHolder.Cal
         }
     }
 
+    public void startRecoder(){
+        isRecoder = !isRecoder;
+        // 用系统时间标记编码开始时间
+        avcEncoder.setStartTime(System.nanoTime());
+        avcEncoder.startEncode();
+    }
+
     public void stopRecoder(){
-        isRecoder =! isRecoder;
+        isRecoder = !isRecoder;
         avcEncoder.stopEncode();
         try {
             fileOutputStream.flush();
@@ -119,7 +124,7 @@ public class ArcvideoCamera implements Camera.PreviewCallback, SurfaceHolder.Cal
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
         Log.d(TAG, "surfaceCreated: ");
-        initConfig();
+        initCameraConfig();
     }
 
     @Override
@@ -129,6 +134,9 @@ public class ArcvideoCamera implements Camera.PreviewCallback, SurfaceHolder.Cal
             @Override
             public void run() {
                 startPreview(surfaceHolder);
+
+                // 初始化视频编码器配置
+                initEncoderConfig();
             }
         }).start();
     }

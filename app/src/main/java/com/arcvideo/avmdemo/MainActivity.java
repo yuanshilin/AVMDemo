@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -32,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
     public static final int UPDATETIME = -1000;
     public static final int STOPRECODER = -1001;
     // 视频录制时间
-    private final int RECODER_TIME = 300;
+    private int RECODER_TIME;
     private void setWindowFlag(){
         Window window = getWindow();
         View decorView = window.getDecorView();
@@ -78,6 +79,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initdata() {
+        try {
+            RECODER_TIME = Settings.System.getInt(getContentResolver(), "arc_recoder_time");
+        } catch (Settings.SettingNotFoundException e) {
+            RECODER_TIME = 300;
+        }
         cameraFactory = new CameraFactory(relativeLayout, this);
         cameraFactory.initCameraViews();
         handler = new Handler() {
@@ -86,8 +92,13 @@ public class MainActivity extends AppCompatActivity {
                 switch (msg.what) {
                     case UPDATETIME:
                         Integer timecount = (Integer) ((Bundle)msg.obj).get("timecount");
-
-                        recodertime.setText(String.format(Locale.CHINA, "%02d:%02d", timecount.intValue()/60, timecount.intValue()%60));
+                        if (timecount < 3600){
+                            recodertime.setText(String.format(Locale.CHINA, "%02d:%02d",
+                                    timecount.intValue() / 60, timecount.intValue() % 60));
+                        }else{
+                            recodertime.setText(String.format(Locale.CHINA, "%02d:%02d:%02d",
+                                    timecount.intValue() / 3600,(timecount.intValue() % 3600) / 60, timecount.intValue() % 60));
+                        }
                         break;
                     case STOPRECODER:
                         stopRecoder();
@@ -161,6 +172,7 @@ public class MainActivity extends AppCompatActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                Log.d(TAG, "run: current recoder time is "+RECODER_TIME);
                 int count = 0;
                 while (isRecoder) {
                     try {
@@ -172,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
                     // 限制最长录制时间
                     if (count > RECODER_TIME){
                         handler.sendEmptyMessage(STOPRECODER);
-                        return;
+                        break;
                     }else{
                         Bundle bundle = new Bundle();
                         bundle.putSerializable("timecount", new Integer(count));
